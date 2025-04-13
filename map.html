@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Emergency Map | AI Supply Chain Optimizer</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
+    <!-- Custom CSS -->
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        #main-map {
+            height: calc(100vh - 120px);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .map-overlay {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            width: 300px;
+        }
+        .drone-control-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 300px;
+        }
+        .map-legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            line-height: 1.5;
+        }
+        .legend-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border-radius: 50%;
+        }
+        .emergency-marker {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .resource-marker {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            box-shadow: 0 0 3px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-robot me-2"></i>AI Emergency Optimizer
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html"><i class="fas fa-home me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-map me-1"></i> Live Map</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="emergency-form.html"><i class="fas fa-plus-circle me-1"></i> New Emergency</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button class="btn btn-sm btn-outline-light me-2" id="refreshMapBtn">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="toggleDroneBtn">
+                        <i class="fas fa-drone-alt me-1"></i> Drones
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Map -->
+    <div class="container-fluid mt-3">
+        <div class="position-relative">
+            <div id="main-map"></div>
+            
+            <!-- Map Overlay -->
+            <div class="map-overlay">
+                <h5><i class="fas fa-layer-group me-2"></i>Map Layers</h5>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="toggleEmergencies" checked>
+                    <label class="form-check-label" for="toggleEmergencies">Active Emergencies</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="toggleResources" checked>
+                    <label class="form-check-label" for="toggleResources">Resource Centers</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="toggleRoutes" checked>
+                    <label class="form-check-label" for="toggleRoutes">Response Routes</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="toggleHeatmap">
+                    <label class="form-check-label" for="toggleHeatmap">Risk Heatmap</label>
+                </div>
+                
+                <div class="map-legend">
+                    <h6><i class="fas fa-key me-2"></i>Legend</h6>
+                    <div><span class="legend-icon bg-danger"></span> Critical Emergency</div>
+                    <div><span class="legend-icon bg-warning"></span> Severe Emergency</div>
+                    <div><span class="legend-icon bg-success"></span> Moderate Emergency</div>
+                    <div><span class="legend-icon bg-primary"></span> Resource Center</div>
+                    <div><span class="legend-icon bg-dark"></span> Route Blockage</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drone Control Panel (initially hidden) -->
+    <div class="drone-control-panel" id="droneControlPanel" style="display: none;">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="fas fa-drone-alt me-2"></i>Drone Control
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Active Drones: <span id="activeDronesCount">0</span></label>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" id="droneBattery" style="width: 100%">100%</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Live Feed</label>
+                    <div class="drone-feed-placeholder bg-light p-4 text-center">
+                        <i class="fas fa-drone fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Select a drone to view live feed</p>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-success" id="deployDronesBtn">
+                        <i class="fas fa-paper-plane me-1"></i> Deploy Drones
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" id="recallDronesBtn">
+                        <i class="fas fa-undo me-1"></i> Recall All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All JavaScript Files -->
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <!-- Leaflet Marker Cluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <!-- Custom JS -->
+    <script src="assets/js/map.js"></script>
+</body>
+</html>

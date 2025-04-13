@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Report | AI Supply Chain Optimizer</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link href="assets/css/style.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
+    <style>
+        .emergency-form-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .form-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .location-picker {
+            height: 300px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #ced4da;
+        }
+        .severity-indicator {
+            height: 10px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #28a745, #ffc107, #dc3545);
+            margin-top: 5px;
+        }
+        .severity-value {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+        }
+        .ai-assist-btn {
+            cursor: pointer;
+        }
+        .form-preview {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        #imagePreview {
+            max-height: 200px;
+            display: none;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-robot me-2"></i>AI Emergency Optimizer
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html"><i class="fas fa-home me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="map.html"><i class="fas fa-map me-1"></i> Live Map</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-plus-circle me-1"></i> New Emergency</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Form -->
+    <div class="container-fluid py-4">
+        <div class="emergency-form-container">
+            <div class="form-header">
+                <h2><i class="fas fa-triangle-exclamation text-danger me-2"></i>Report New Emergency</h2>
+                <p class="text-muted">Fill out this form to activate emergency response protocols</p>
+            </div>
+
+            <form id="emergencyForm">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="emergencyType" class="form-label">Emergency Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="emergencyType" required>
+                                <option value="" selected disabled>Select type</option>
+                                <option value="Flood">Flood</option>
+                                <option value="Earthquake">Earthquake</option>
+                                <option value="Cyclone">Cyclone</option>
+                                <option value="Fire">Fire</option>
+                                <option value="Landslide">Landslide</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="emergencyLocation" class="form-label">Location <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="emergencyLocation" placeholder="Enter location" required>
+                                <button class="btn btn-outline-secondary" type="button" id="detectLocationBtn">
+                                    <i class="fas fa-location-crosshairs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="emergencySeverity" class="form-label">Severity Level <span class="text-danger">*</span></label>
+                            <input type="range" class="form-range" min="1" max="100" id="emergencySeverity">
+                            <div class="severity-indicator"></div>
+                            <div class="severity-value">
+                                <span id="severityText">50% - Moderate</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Location Map</label>
+                            <div id="locationMap" class="location-picker"></div>
+                            <small class="text-muted">Click on map to pinpoint exact location</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="emergencyDescription" class="form-label">Description <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="emergencyDescription" rows="3" placeholder="Provide details about the emergency situation" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="emergencyImage" class="form-label">Upload Image/Video</label>
+                            <input class="form-control" type="file" id="emergencyImage" accept="image/*, video/*">
+                            <div class="form-text">Upload visual evidence to help assess the situation</div>
+                            <img id="imagePreview" class="img-fluid rounded" alt="Preview">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label">AI-Assisted Details</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary ai-assist-btn" id="aiAssistBtn">
+                            <i class="fas fa-magic me-1"></i> Auto-Fill with AI
+                        </button>
+                    </div>
+                    <div class="form-preview" id="aiSuggestionBox">
+                        <p class="text-muted mb-0">AI suggestions will appear here after analyzing your input</p>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-outline-secondary me-md-2" id="previewBtn">
+                        <i class="fas fa-eye me-1"></i> Preview
+                    </button>
+                    <button type="submit" class="btn btn-danger" id="submitBtn">
+                        <i class="fas fa-paper-plane me-1"></i> Activate Emergency Response
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Response Modal -->
+    <div class="modal fade" id="responseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="responseModalTitle">Emergency Reported</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="responseModalBody">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="index.html" class="btn btn-primary">Go to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All JavaScript Files -->
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <!-- Custom JS -->
+    <script src="assets/js/emergency-form.js"></script>
+</body>
+</html>
